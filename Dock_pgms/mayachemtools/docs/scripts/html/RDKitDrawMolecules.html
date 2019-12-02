@@ -1,0 +1,137 @@
+<html>
+<head>
+<title>MayaChemTools:Documentation:RDKitDrawMolecules.py</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<link rel="stylesheet" type="text/css" href="../../css/MayaChemTools.css">
+</head>
+<body leftmargin="20" rightmargin="20" topmargin="10" bottommargin="10">
+<br/>
+<center>
+<a href="http://www.mayachemtools.org" title="MayaChemTools Home"><img src="../../images/MayaChemToolsLogo.gif" border="0" alt="MayaChemTools"></a>
+</center>
+<br/>
+<div class="DocNav">
+<table width="100%" border=0 cellpadding=0 cellspacing=2>
+<tr align="left" valign="top"><td width="33%" align="left"><a href="./RDKitConvertFileFormat.html" title="RDKitConvertFileFormat.html">Previous</a>&nbsp;&nbsp;<a href="./index.html" title="Table of Contents">TOC</a>&nbsp;&nbsp;<a href="./RDKitEnumerateCompoundLibrary.html" title="RDKitEnumerateCompoundLibrary.html">Next</a></td><td width="34%" align="middle"><strong>RDKitDrawMolecules.py</strong></td><td width="33%" align="right"><a href="././code/RDKitDrawMolecules.html" title="View source code">Code</a>&nbsp;|&nbsp;<a href="./../pdf/RDKitDrawMolecules.pdf" title="PDF US Letter Size">PDF</a>&nbsp;|&nbsp;<a href="./../pdfgreen/RDKitDrawMolecules.pdf" title="PDF US Letter Size with narrow margins: www.changethemargins.com">PDFGreen</a>&nbsp;|&nbsp;<a href="./../pdfa4/RDKitDrawMolecules.pdf" title="PDF A4 Size">PDFA4</a>&nbsp;|&nbsp;<a href="./../pdfa4green/RDKitDrawMolecules.pdf" title="PDF A4 Size with narrow margins: www.changethemargins.com">PDFA4Green</a></td></tr>
+</table>
+</div>
+<h1 id="NAME">NAME</h2>
+<p>RDKitDrawMolecules.py - Draw molecules and generate an image file</p>
+<h1 id="SYNOPSIS">SYNOPSIS</h2>
+<p>RDKitDrawMolecules.py [<b>--alignmentSMARTS</b> &lt;SMARTS&gt;] [<b>--atomLabelFontSize</b> &lt;number&gt;] [<b>--bondLineWidth</b> &lt;number&gt;] [<b>--compute2DCoords</b> &lt;yes | no&gt;] [<b>--fontBold</b> &lt;yes or no&gt;] [<b>--highlightSMARTS</b> &lt;SMARTS&gt;] [<b>--infileParams</b> &lt;Name,Value,...&gt;] [<b>--kekulize</b> &lt;yes or no&gt;] [<b>--molImageSize</b> &lt;width,height&gt;] [<b>--numOfMolsPerRow</b> &lt;number&gt;] [--overwrite] [<b>--showMolName</b> &lt;yes or no&gt;] [<b>-w</b> &lt;dir&gt;] <b>-i</b> &lt;infile&gt; <b>-o</b> &lt;outfile&gt;</p>
+<p>RDKitDrawMolecules.py <b>-h</b> | <b>--help</b> | <b>-e</b> | <b>--examples</b></p>
+<h1 id="DESCRIPTION">DESCRIPTION</h2>
+<p>Draw molecules in a grid and write them out as an image file. The SVG image file appears to be the best among all the available image file options, as rendered in a browser. The Python modules aggdraw/cairo are required to generate high quality PNG images.</p>
+<p>The options &#39;--atomLabelFontSize&#39; and &#39;--bondLineWidth&#39; don&#39;t appear to work during generation of a SVG image.</p>
+<p>The supported input file formats are: Mol (.mol), SD (.sdf, .sd), SMILES (.smi, .txt, .csv, .tsv)</p>
+<p>The output image file can be saved in any format supported by the Python Image Library (PIL). The image format is automatically detected from the output file extension.</p>
+<p>Some of the most common output image file formats are: GIF (.gif), JPEG (.jpg), PNG (.png), SVG (.svg), TIFF (.tif)</p>
+<h1 id="OPTIONS">OPTIONS</h2>
+<dl>
+<dt id="alignmentSMARTS-SMARTS-default:-none"><b>--alignmentSMARTS</b> &lt;SMARTS&gt; [default: none]</dt>
+<dd>
+<p>SMARTS pattern for aligning molecules to a common template.</p>
+</dd>
+<dt id="atomLabelFontSize-number-default:-12"><b>--atomLabelFontSize</b> &lt;number&gt; [default: 12]</dt>
+<dd>
+<p>Font size for drawing atom labels. This option is ignored during generation of a SVG output file.</p>
+</dd>
+<dt id="b---bondLineWidth-number-default:-1.2"><b>-b, --bondLineWidth</b> &lt;number&gt; [default: 1.2]</dt>
+<dd>
+<p>Line width for drawing bonds. This option is ignored during generation of a SVG output file.</p>
+</dd>
+<dt id="c---compute2DCoords-yes-no-default:-auto"><b>-c, --compute2DCoords</b> &lt;yes | no&gt; [default: auto]</dt>
+<dd>
+<p>Compute 2D coordinates of molecules before drawing. Default: yes for SMILES file; no for all other file types.</p>
+</dd>
+<dt id="e---examples"><b>-e, --examples</b></dt>
+<dd>
+<p>Print examples.</p>
+</dd>
+<dt id="f---fontBold-yes-or-no-default:-yes"><b>-f --fontBold</b> &lt;yes or no&gt; [default: yes]</dt>
+<dd>
+<p>Make all text fonts bold during generation of a SVG output file. This option is ignored for all other output files.</p>
+</dd>
+<dt id="h---help"><b>-h, --help</b></dt>
+<dd>
+<p>Print this help message.</p>
+</dd>
+<dt id="highlightSMARTS-SMARTS-default:-none"><b>--highlightSMARTS</b> &lt;SMARTS&gt; [default: none]</dt>
+<dd>
+<p>SMARTS pattern for highlighting atoms and bonds in molecules. All matched substructures are highlighted.</p>
+</dd>
+<dt id="i---infile-infile"><b>-i, --infile</b> &lt;infile&gt;</dt>
+<dd>
+<p>Input file name.</p>
+</dd>
+<dt id="infileParams-Name-Value-...-default:-auto"><b>--infileParams</b> &lt;Name,Value,...&gt; [default: auto]</dt>
+<dd>
+<p>A comma delimited list of parameter name and value pairs for reading molecules from files. The supported parameter names for different file formats, along with their default values, are shown below:</p>
+<div class="OptionsBox">    SD, MOL: removeHydrogens,yes,sanitize,yes,strictParsing,yes
+<br/>    SMILES: smilesColumn,1,smilesNameColumn,2,smilesDelimiter,space,
+<br/>&nbsp;&nbsp;&nbsp;&nbsp;        smilesTitleLine,auto,sanitize,yes
+<br/>    </div>
+<p>Possible values for smilesDelimiter: space, comma or tab.</p>
+</dd>
+<dt id="k---kekulize-yes-or-no-default:-yes"><b>-k, --kekulize</b> &lt;yes or no&gt; [default: yes]</dt>
+<dd>
+<p>Perform kekulization on molecules. This option is ignored during generation of a SVG output file.</p>
+</dd>
+<dt id="m---molImageSize-width-height-default:-400-300"><b>-m, --molImageSize</b> &lt;width,height&gt; [default: 400,300]</dt>
+<dd>
+<p>Image size of a molecule in pixels.</p>
+</dd>
+<dt id="n---numOfMolsPerRow-number-default:-2"><b>-n, --numOfMolsPerRow</b> &lt;number&gt; [default: 2]</dt>
+<dd>
+<p>Number of molecules to draw in a row.</p>
+</dd>
+<dt id="o---outfile-outfile"><b>-o, --outfile</b> &lt;outfile&gt;</dt>
+<dd>
+<p>Output file name.</p>
+</dd>
+<dt id="overwrite"><b>--overwrite</b></dt>
+<dd>
+<p>Overwrite existing files.</p>
+</dd>
+<dt id="s---showMolName-yes-or-no-default:-yes"><b>-s, --showMolName</b> &lt;yes or no&gt; [default: yes]</dt>
+<dd>
+<p>Show molecule names under the images.</p>
+</dd>
+<dt id="w---workingdir-dir"><b>-w, --workingdir</b> &lt;dir&gt;</dt>
+<dd>
+<p>Location of working directory which defaults to the current directory.</p>
+</dd>
+</dl>
+<h1 id="EXAMPLES">EXAMPLES</h2>
+<p>To automatically compute 2D coordinates for molecules in a SMILES file and generate a SVG image file containing 2 molecules per row in a grid with cell size of 400 x 300 pixels, type:</p>
+<div class="ExampleBox">    % RDKitDrawMolecules.py -i Sample.smi -o SampleOut.svg</div>
+<p>To automatically compute 2D coordinates for molecules in a SMILES file and generate a SVG image file containing 4 molecules per row in a grid with cell size of 200 x 200 pixels and without any keulization along with highlighting a specific set of atoms and bonds indicated by a SMARTS pattern, type:</p>
+<div class="ExampleBox">    % RDKitDrawMolecules.py -n 4 -m &quot;200,200&quot; -k no --fontBold no
+      --highlightSMARTS  &#39;c1ccccc1&#39; -i Sample.smi -o SampleOut.svg</div>
+<p>To generate a PNG image file for molecules in a SD file using existing 2D coordinates, type</p>
+<div class="ExampleBox">    % RDKitDrawMolecules.py --compute2DCoords no -i Sample.sdf
+      -o SampleOut.png</div>
+<p>To automatically compute 2D coordinates for molecules in a CSV SMILES file with column headers, SMILES strings in column 1, and name in column 2 and generate a PDF image file, type:</p>
+<div class="ExampleBox">    % RDKitDrawMolecules.py --infileParams &quot;smilesDelimiter,comma,
+      smilesTitleLine,yes,smilesColumn,1,smilesNameColumn,2&quot;
+      -i SampleSMILES.csv -o SampleOut.pdf</div>
+<h1 id="AUTHOR">AUTHOR</h2>
+<p><a href="mailto:msud@san.rr.com">Manish Sud</a></p>
+<h1 id="SEE-ALSO">SEE ALSO</h2>
+<p><a href="./RDKitConvertFileFormat.html">RDKitConvertFileFormat.py</a>, <a href="./RDKitRemoveDuplicateMolecules.html">RDKitRemoveDuplicateMolecules.py</a>, <a href="./RDKitSearchFunctionalGroups.html">RDKitSearchFunctionalGroups.py</a>, <a href="./RDKitSearchSMARTS.html">RDKitSearchSMARTS.py</a></p>
+<h1 id="COPYRIGHT">COPYRIGHT</h2>
+<p>Copyright (C) 2018 Manish Sud. All rights reserved.</p>
+<p>The functionality available in this script is implemented using RDKit, an open source toolkit for cheminformatics developed by Greg Landrum.</p>
+<p>This file is part of MayaChemTools.</p>
+<p>MayaChemTools is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.</p>
+<p>&nbsp</p><p>&nbsp</p><div class="DocNav">
+<table width="100%" border=0 cellpadding=0 cellspacing=2>
+<tr align="left" valign="top"><td width="33%" align="left"><a href="./RDKitConvertFileFormat.html" title="RDKitConvertFileFormat.html">Previous</a>&nbsp;&nbsp;<a href="./index.html" title="Table of Contents">TOC</a>&nbsp;&nbsp;<a href="./RDKitEnumerateCompoundLibrary.html" title="RDKitEnumerateCompoundLibrary.html">Next</a></td><td width="34%" align="middle"><strong>February 4, 2018</strong></td><td width="33%" align="right"><strong>RDKitDrawMolecules.py</strong></td></tr>
+</table>
+</div>
+<br />
+<center>
+<img src="../../images/h2o2.png">
+</center>
+</body>
+</html>

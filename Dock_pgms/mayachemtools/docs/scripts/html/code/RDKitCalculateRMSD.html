@@ -1,0 +1,410 @@
+<html>
+<head>
+<title>MayaChemTools:Code:RDKitCalculateRMSD.py</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<link rel="stylesheet" type="text/css" href="../../../css/MayaChemToolsPythonCode.css">
+</head>
+<body leftmargin="20" rightmargin="20" topmargin="10" bottommargin="10">
+<br/>
+<center>
+<a href="http://www.mayachemtools.org" title="MayaChemTools Home"><img src="../../../images/MayaChemToolsLogo.gif" border="0" alt="MayaChemTools"></a>
+</center>
+<br/>
+<pre>
+   1 <span class="ch">#!/bin/env python</span>
+   2 <span class="c1">#</span>
+   3 <span class="c1"># File: RDKitCalculateRMSD.py</span>
+   4 <span class="c1"># Author: Manish Sud &lt;msud@san.rr.com&gt;</span>
+   5 <span class="c1">#</span>
+   6 <span class="c1"># Copyright (C) 2018 Manish Sud. All rights reserved.</span>
+   7 <span class="c1">#</span>
+   8 <span class="c1"># The functionality available in this script is implemented using RDKit, an</span>
+   9 <span class="c1"># open source toolkit for cheminformatics developed by Greg Landrum.</span>
+  10 <span class="c1">#</span>
+  11 <span class="c1"># This file is part of MayaChemTools.</span>
+  12 <span class="c1">#</span>
+  13 <span class="c1"># MayaChemTools is free software; you can redistribute it and/or modify it under</span>
+  14 <span class="c1"># the terms of the GNU Lesser General Public License as published by the Free</span>
+  15 <span class="c1"># Software Foundation; either version 3 of the License, or (at your option) any</span>
+  16 <span class="c1"># later version.</span>
+  17 <span class="c1">#</span>
+  18 <span class="c1"># MayaChemTools is distributed in the hope that it will be useful, but without</span>
+  19 <span class="c1"># any warranty; without even the implied warranty of merchantability of fitness</span>
+  20 <span class="c1"># for a particular purpose.  See the GNU Lesser General Public License for more</span>
+  21 <span class="c1"># details.</span>
+  22 <span class="c1">#</span>
+  23 <span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+  24 <span class="c1"># along with MayaChemTools; if not, see &lt;http://www.gnu.org/licenses/&gt; or</span>
+  25 <span class="c1"># write to the Free Software Foundation Inc., 59 Temple Place, Suite 330,</span>
+  26 <span class="c1"># Boston, MA, 02111-1307, USA.</span>
+  27 <span class="c1">#</span>
+  28 
+  29 <span class="sd">&quot;&quot;&quot;</span>
+  30 <span class="sd">RDKitCalculateRMSD.py - Calculate RMSD between molecules</span>
+  31 
+  32 <span class="sd">Usage:</span>
+  33 <span class="sd">    RDKitCalculateRMSD.py [--calcRMSD &lt;RMSD, BestRMSD&gt;] [--infileParams &lt;Name,Value,...&gt;]</span>
+  34 <span class="sd">                          [--maxIters &lt;number&gt;] [--mode &lt;OneToOne, AllToAll, FirstToAll&gt;]</span>
+  35 <span class="sd">                          [--overwrite] [-w &lt;dir&gt;] -r &lt;reffile&gt; -p &lt;probefile&gt; -o &lt;outfile&gt; </span>
+  36 <span class="sd">    RDKitCalculateRMSD.py -h | --help | -e | --examples</span>
+  37 
+  38 <span class="sd">Description:</span>
+  39 <span class="sd">    Calculate Root Mean Square Distance (RMSD) between a set of similar molecules in</span>
+  40 <span class="sd">    reference and probe input files. The RDKit function fails to calculate RMSD values for</span>
+  41 <span class="sd">    dissimilar molecules. Consequently, a text string &#39;None&#39; is written out as a RMSD value</span>
+  42 <span class="sd">    for dissimilar molecule pairs.</span>
+  43 
+  44 <span class="sd">    The supported input file formats are: Mol (.mol), SD (.sdf, .sd)</span>
+  45 
+  46 <span class="sd">    The supported output file formats are:  CSV (.csv), TSV (.tsv, .txt)</span>
+  47 
+  48 <span class="sd">Options:</span>
+  49 <span class="sd">    -c, --calcRMSD &lt;RMSD, BestRMSD&gt;  [default: RMSD]</span>
+  50 <span class="sd">        Methodology for calculating RMSD values. Possible values: RMSD, BestRMSD.</span>
+  51 <span class="sd">        During BestRMSMode mode, the RDKit &#39;function AllChem.GetBestRMS&#39; is used to</span>
+  52 <span class="sd">        align and calculate RMSD. This function calculates optimal RMSD for aligning two</span>
+  53 <span class="sd">        molecules, taking symmetry into account. Otherwise, the RMSD value is calculated</span>
+  54 <span class="sd">        using &#39;AllChem.AlignMol function&#39; without changing the atom order. A word to the</span>
+  55 <span class="sd">        wise from RDKit documentation: The AllChem.GetBestRMS function will attempt to</span>
+  56 <span class="sd">        align all permutations of matching atom orders in both molecules, for some molecules</span>
+  57 <span class="sd">        it will lead to &#39;combinatorial explosion&#39;.</span>
+  58 <span class="sd">    --infileParams &lt;Name,Value,...&gt;  [default: auto]</span>
+  59 <span class="sd">        A comma delimited list of parameter name and value pairs for reading</span>
+  60 <span class="sd">        molecules from files. The supported parameter names for different file</span>
+  61 <span class="sd">        formats, along with their default values, are shown below:</span>
+  62 <span class="sd">            </span>
+  63 <span class="sd">            SD, MOL: removeHydrogens,yes,sanitize,yes,strictParsing,yes</span>
+  64 <span class="sd">            </span>
+  65 <span class="sd">    --maxIters &lt;number&gt;  [default: 50]</span>
+  66 <span class="sd">        Maximum number of iterations to perform for each molecule pair during minimization</span>
+  67 <span class="sd">        of RMSD values. This option is ignored during BestRMSD mode.</span>
+  68 <span class="sd">    -m, --mode &lt;OneToOne, AllToAll, FirstToAll&gt;  [default: OneToOne]</span>
+  69 <span class="sd">        Specify how molecules are handled in reference and probe input files during</span>
+  70 <span class="sd">        calculation of RMSD between reference and probe molecules.  Possible values:</span>
+  71 <span class="sd">        OneToOne, AllToAll and AllToFirst. For OneToOne mode, the number of molecules</span>
+  72 <span class="sd">        in reference file must be equal to the number of molecules in probe file. The RMSD</span>
+  73 <span class="sd">        is calculated for each pair of molecules in the reference and probe file and written</span>
+  74 <span class="sd">        to the output file. For AllToAll mode, the RMSD is calculated for each reference</span>
+  75 <span class="sd">        molecule against all probe molecules. For FirstToAll mode, however, the RMSD</span>
+  76 <span class="sd">        is only calculated for the first reference molecule against all probe molecules.</span>
+  77 <span class="sd">    -e, --examples</span>
+  78 <span class="sd">        Print examples.</span>
+  79 <span class="sd">    -h, --help</span>
+  80 <span class="sd">        Print this help message.</span>
+  81 <span class="sd">    -p, --probefile &lt;probefile&gt;</span>
+  82 <span class="sd">        Probe input file name.</span>
+  83 <span class="sd">    -r, --reffile &lt;reffile&gt;</span>
+  84 <span class="sd">        Reference input file name.</span>
+  85 <span class="sd">    -o, --outfile &lt;outfile&gt;</span>
+  86 <span class="sd">        Output file name for writing out RMSD values. Supported text file extensions: csv or tsv.</span>
+  87 <span class="sd">    --overwrite</span>
+  88 <span class="sd">        Overwrite existing files.</span>
+  89 <span class="sd">    -w, --workingdir &lt;dir&gt;</span>
+  90 <span class="sd">        Location of working directory which defaults to the current directory.</span>
+  91 
+  92 <span class="sd">Examples:</span>
+  93 <span class="sd">    To calculate RMSD between pair of molecules in reference and probe molecules in</span>
+  94 <span class="sd">    3D SD files and write out a CSV file containing calculated RMSD values along with</span>
+  95 <span class="sd">    appropriate molecule IDs, type:</span>
+  96 
+  97 <span class="sd">        % RDKitCalculateRMSD.py  -r Sample3DRef.sdf -p Sample3DProb.sdf</span>
+  98 <span class="sd">          -o SampleOut.csv</span>
+  99 
+ 100 <span class="sd">    To calculate RMSD between all molecules in reference and probe molecules in</span>
+ 101 <span class="sd">    3D SD files and write out a CSV file containing calculated RMSD values along with</span>
+ 102 <span class="sd">    appropriate molecule IDs, type:</span>
+ 103 
+ 104 <span class="sd">        % RDKitCalculateRMSD.py  -m AllToAll -r Sample3DRef.sdf -p</span>
+ 105 <span class="sd">          Sample3DProb.sdf -o SampleOut.csv</span>
+ 106 
+ 107 <span class="sd">    To calculate best RMSD between first  molecule in reference all probe molecules</span>
+ 108 <span class="sd">    in 3D SD files and write out a TSV file containing calculated RMSD values along with</span>
+ 109 <span class="sd">    appropriate molecule IDs, type:</span>
+ 110 
+ 111 <span class="sd">        % RDKitCalculateRMSD.py  -m FirstToAll --calcRMSD BestRMSD -r</span>
+ 112 <span class="sd">          Sample3DRef.sdf -p Sample3DProb.sdf -o SampleOut.tsv</span>
+ 113 
+ 114 <span class="sd">    To calculate RMSD between all molecules in reference and probe molecules in</span>
+ 115 <span class="sd">    3D SD files without removing hydrogens and write out a TSV file containing</span>
+ 116 <span class="sd">    calculated RMSD values along with appropriate molecule IDs, type:</span>
+ 117 
+ 118 <span class="sd">        % RDKitCalculateRMSD.py  -m AllToAll --infileParams</span>
+ 119 <span class="sd">          &quot;removeHydrogens,no&quot; -r Sample3DRef.sdf  -p Sample3DProb.sdf</span>
+ 120 <span class="sd">          -o SampleOut.tsv</span>
+ 121 
+ 122 <span class="sd">Author:</span>
+ 123 <span class="sd">    Manish Sud(msud@san.rr.com)</span>
+ 124 
+ 125 <span class="sd">See also:</span>
+ 126 <span class="sd">    RDKitCalculateMolecularDescriptors.py, RDKitCompareMoleculeShapes.py, RDKitConvertFileFormat.py,</span>
+ 127 <span class="sd">    RDKitGenerateConformers.py, RDKitPerformMinimization.py</span>
+ 128 
+ 129 <span class="sd">Copyright:</span>
+ 130 <span class="sd">    Copyright (C) 2018 Manish Sud. All rights reserved.</span>
+ 131 
+ 132 <span class="sd">    The functionality available in this script is implemented using RDKit, an</span>
+ 133 <span class="sd">    open source toolkit for cheminformatics developed by Greg Landrum.</span>
+ 134 
+ 135 <span class="sd">    This file is part of MayaChemTools.</span>
+ 136 
+ 137 <span class="sd">    MayaChemTools is free software; you can redistribute it and/or modify it under</span>
+ 138 <span class="sd">    the terms of the GNU Lesser General Public License as published by the Free</span>
+ 139 <span class="sd">    Software Foundation; either version 3 of the License, or (at your option) any</span>
+ 140 <span class="sd">    later version.</span>
+ 141 
+ 142 <span class="sd">&quot;&quot;&quot;</span>
+ 143 
+ 144 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+ 145 
+ 146 <span class="c1"># Add local python path to the global path and import appropriate modules...</span>
+ 147 <span class="kn">import</span> <span class="nn">os</span>
+ 148 <span class="kn">import</span> <span class="nn">sys</span><span class="p">;</span>  <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;lib&quot;</span><span class="p">,</span> <span class="s2">&quot;Python&quot;</span><span class="p">))</span>
+ 149 <span class="kn">import</span> <span class="nn">time</span>
+ 150 <span class="kn">import</span> <span class="nn">re</span>
+ 151 
+ 152 <span class="c1"># RDKit imports...</span>
+ 153 <span class="k">try</span><span class="p">:</span>
+ 154     <span class="kn">from</span> <span class="nn">rdkit</span> <span class="kn">import</span> <span class="n">rdBase</span>
+ 155     <span class="kn">from</span> <span class="nn">rdkit</span> <span class="kn">import</span> <span class="n">Chem</span>
+ 156     <span class="kn">from</span> <span class="nn">rdkit.Chem</span> <span class="kn">import</span> <span class="n">AllChem</span><span class="p">,</span> <span class="n">rdMolAlign</span>
+ 157 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">ErrMsg</span><span class="p">:</span>
+ 158     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Failed to import RDKit module/package: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ErrMsg</span><span class="p">)</span>
+ 159     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Check/update your RDKit environment and try again.</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+ 160     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+ 161 
+ 162 <span class="c1"># MayaChemTools imports...</span>
+ 163 <span class="k">try</span><span class="p">:</span>
+ 164     <span class="kn">from</span> <span class="nn">docopt</span> <span class="kn">import</span> <span class="n">docopt</span>
+ 165     <span class="kn">import</span> <span class="nn">MiscUtil</span>
+ 166     <span class="kn">import</span> <span class="nn">RDKitUtil</span>
+ 167 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">ErrMsg</span><span class="p">:</span>
+ 168     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Failed to import MayaChemTools module/package: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ErrMsg</span><span class="p">)</span>
+ 169     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Check/update your MayaChemTools environment and try again.</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+ 170     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+ 171 
+ 172 <span class="n">ScriptName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+ 173 <span class="n">Options</span> <span class="o">=</span> <span class="p">{}</span>
+ 174 <span class="n">OptionsInfo</span> <span class="o">=</span> <span class="p">{}</span>
+ 175 
+ 176 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+ 177     <span class="sd">&quot;&quot;&quot;Start execution of the script&quot;&quot;&quot;</span>
+ 178     
+ 179     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2"> (RDK v</span><span class="si">%s</span><span class="s2">): Starting...</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ScriptName</span><span class="p">,</span> <span class="n">rdBase</span><span class="o">.</span><span class="n">rdkitVersion</span><span class="p">))</span>
+ 180     
+ 181     <span class="p">(</span><span class="n">WallClockTime</span><span class="p">,</span> <span class="n">ProcessorTime</span><span class="p">)</span> <span class="o">=</span> <span class="n">MiscUtil</span><span class="o">.</span><span class="n">GetWallClockAndProcessorTime</span><span class="p">()</span>
+ 182     
+ 183     <span class="c1"># Retrieve command line arguments and options...</span>
+ 184     <span class="n">RetrieveOptions</span><span class="p">()</span>
+ 185     
+ 186     <span class="c1"># Process and validate command line arguments and options...</span>
+ 187     <span class="n">ProcessOptions</span><span class="p">()</span>
+ 188     
+ 189     <span class="c1"># Perform actions required by the script...</span>
+ 190     <span class="n">CalculateRMSD</span><span class="p">()</span>
+ 191     
+ 192     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">: Done...</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ScriptName</span><span class="p">)</span>
+ 193     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;Total time: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MiscUtil</span><span class="o">.</span><span class="n">GetFormattedElapsedTime</span><span class="p">(</span><span class="n">WallClockTime</span><span class="p">,</span> <span class="n">ProcessorTime</span><span class="p">))</span>
+ 194 
+ 195 <span class="k">def</span> <span class="nf">CalculateRMSD</span><span class="p">():</span>
+ 196     <span class="sd">&quot;&quot;&quot;Calculate RMSD values.&quot;&quot;&quot;</span>
+ 197     
+ 198     <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^(OneToOne|AllToAll|FirstToAll)$&quot;</span><span class="p">,</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">):</span>
+ 199         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintError</span><span class="p">(</span><span class="s2">&quot;RMSD couldn&#39;t be calculated: Specified mode, </span><span class="si">%s</span><span class="s2">, is not supported&quot;</span> <span class="o">%</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">])</span>
+ 200         
+ 201     <span class="n">RefFile</span> <span class="o">=</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;RefFile&quot;</span><span class="p">]</span>
+ 202     <span class="n">ProbeFile</span> <span class="o">=</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;ProbeFile&quot;</span><span class="p">]</span>
+ 203     
+ 204     <span class="n">Outfile</span> <span class="o">=</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Outfile&quot;</span><span class="p">]</span>
+ 205     <span class="n">OutDelim</span> <span class="o">=</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;OutDelim&quot;</span><span class="p">]</span>
+ 206 
+ 207     <span class="c1"># Read reference and probe molecules...</span>
+ 208     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;InfileParams&quot;</span><span class="p">][</span><span class="s2">&quot;AllowEmptyMols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+ 209     
+ 210     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Processing file </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RefFile</span><span class="p">))</span>
+ 211     <span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">RefMolCount</span><span class="p">,</span> <span class="n">ValidRefMolCount</span>  <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">ReadAndValidateMolecules</span><span class="p">(</span><span class="n">RefFile</span><span class="p">,</span> <span class="o">**</span><span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;InfileParams&quot;</span><span class="p">])</span>
+ 212     
+ 213     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;Processing file </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ProbeFile</span><span class="p">))</span>
+ 214     <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">ProbeMolCount</span><span class="p">,</span> <span class="n">ValidProbeMolCount</span>  <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">ReadAndValidateMolecules</span><span class="p">(</span><span class="n">ProbeFile</span><span class="p">,</span> <span class="o">**</span><span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;InfileParams&quot;</span><span class="p">])</span>
+ 215 
+ 216     <span class="c1"># Set up output file...</span>
+ 217     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Generating file </span><span class="si">%s</span><span class="s2">...</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">Outfile</span><span class="p">)</span>
+ 218     <span class="n">OutFH</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">Outfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+ 219     <span class="k">if</span> <span class="n">OutFH</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+ 220         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintError</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t open output file: </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Outfile</span><span class="p">))</span>
+ 221     
+ 222     <span class="n">Line</span> <span class="o">=</span> <span class="s2">&quot;RefMolID</span><span class="si">%s</span><span class="s2">ProbeMolID</span><span class="si">%s</span><span class="s2">RMSD</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">OutDelim</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">)</span>
+ 223     <span class="n">OutFH</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Line</span><span class="p">)</span>
+ 224     
+ 225     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^OneToOne$&quot;</span><span class="p">,</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">):</span>
+ 226         <span class="n">CalculateOneToOneRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">)</span>
+ 227     <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^AllToAll$&quot;</span><span class="p">,</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">):</span>
+ 228         <span class="n">CalculateAllToAllRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">)</span>
+ 229     <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^FirstToAll$&quot;</span><span class="p">,</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">):</span>
+ 230         <span class="n">CalculateFirstToAllRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">)</span>
+ 231     <span class="k">else</span><span class="p">:</span>
+ 232         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintError</span><span class="p">(</span><span class="s2">&quot;RMSD couldn&#39;t be calculated: Specified mode, </span><span class="si">%s</span><span class="s2">, is not supported&quot;</span> <span class="o">%</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">])</span>
+ 233 
+ 234     <span class="n">OutFH</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+ 235     
+ 236     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total number of molecules: Reference - </span><span class="si">%d</span><span class="s2">; Probe - </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RefMolCount</span><span class="p">,</span> <span class="n">ProbeMolCount</span><span class="p">))</span>
+ 237     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;Number of valid molecules: Reference - </span><span class="si">%d</span><span class="s2">; Probe - </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ValidRefMolCount</span><span class="p">,</span> <span class="n">ValidProbeMolCount</span><span class="p">))</span>
+ 238     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;Number of ignored molecules:  Reference - </span><span class="si">%d</span><span class="s2">; Probe - </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">((</span><span class="n">RefMolCount</span> <span class="o">-</span> <span class="n">ValidRefMolCount</span><span class="p">),</span> <span class="p">(</span><span class="n">ProbeMolCount</span> <span class="o">-</span> <span class="n">ValidProbeMolCount</span><span class="p">)))</span>
+ 239     
+ 240 <span class="k">def</span> <span class="nf">CalculateOneToOneRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">):</span>
+ 241     <span class="sd">&quot;&quot;&quot;Calculate pairwise RMSD values.&quot;&quot;&quot;</span>
+ 242     
+ 243     <span class="n">ValidRefMolCount</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">)</span>
+ 244     <span class="n">ValidProbeMolCount</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ValidProbeMols</span><span class="p">)</span>
+ 245     
+ 246     <span class="n">MolCount</span> <span class="o">=</span> <span class="n">ValidRefMolCount</span>
+ 247     <span class="k">if</span> <span class="n">ValidRefMolCount</span> <span class="o">&gt;</span> <span class="n">ValidProbeMolCount</span><span class="p">:</span>
+ 248         <span class="n">MolCount</span> <span class="o">=</span> <span class="n">ValidProbeMolCount</span>
+ 249     
+ 250     <span class="k">if</span> <span class="n">ValidRefMolCount</span> <span class="o">!=</span> <span class="n">ValidProbeMolCount</span><span class="p">:</span>
+ 251         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintWarning</span><span class="p">(</span><span class="s2">&quot;Number of valid reference molecules, </span><span class="si">%d</span><span class="s2">,  is not equal to number of valid probe molecules, </span><span class="si">%d</span><span class="s2"> .</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ValidRefMolCount</span><span class="p">,</span> <span class="n">ValidProbeMolCount</span><span class="p">))</span>
+ 252         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintWarning</span><span class="p">(</span><span class="s2">&quot;Pairwise RMSD will be calculated only for first </span><span class="si">%s</span><span class="s2"> molecules.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">MolCount</span><span class="p">))</span>
+ 253 
+ 254     <span class="c1"># Process molecules...</span>
+ 255     <span class="k">for</span> <span class="n">MolIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">MolCount</span><span class="p">):</span>
+ 256         <span class="n">RefMol</span> <span class="o">=</span> <span class="n">ValidRefMols</span><span class="p">[</span><span class="n">MolIndex</span><span class="p">]</span>
+ 257         <span class="n">ProbeMol</span> <span class="o">=</span> <span class="n">ValidProbeMols</span><span class="p">[</span><span class="n">MolIndex</span><span class="p">]</span>
+ 258 
+ 259         <span class="n">RefMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="p">(</span><span class="n">MolIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+ 260         <span class="n">ProbeMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">ProbeMol</span><span class="p">,</span> <span class="p">(</span><span class="n">MolIndex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+ 261 
+ 262         <span class="n">RMSD</span> <span class="o">=</span> <span class="n">CalculateRMSDValue</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">ProbeMol</span><span class="p">)</span>
+ 263         
+ 264         <span class="n">Line</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%s%s%s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RefMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">ProbeMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">RMSD</span><span class="p">)</span>
+ 265         <span class="n">OutFH</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Line</span><span class="p">)</span>
+ 266         
+ 267 <span class="k">def</span> <span class="nf">CalculateAllToAllRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">):</span>
+ 268     <span class="sd">&quot;&quot;&quot;Calculate RMSD values between all pairs of molecules.&quot;&quot;&quot;</span>
+ 269     
+ 270     <span class="c1"># Process molecules...</span>
+ 271     <span class="n">RefMolCount</span> <span class="o">=</span> <span class="mi">0</span>
+ 272     <span class="k">for</span> <span class="n">RefMol</span> <span class="ow">in</span> <span class="n">ValidRefMols</span><span class="p">:</span>
+ 273         <span class="n">RefMolCount</span> <span class="o">+=</span> <span class="mi">1</span>
+ 274         <span class="n">RefMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">RefMolCount</span><span class="p">)</span>
+ 275 
+ 276         <span class="n">ProbeMolCount</span> <span class="o">=</span> <span class="mi">0</span>
+ 277         <span class="k">for</span> <span class="n">ProbeMol</span> <span class="ow">in</span> <span class="n">ValidProbeMols</span><span class="p">:</span>
+ 278             <span class="n">ProbeMolCount</span> <span class="o">+=</span> <span class="mi">1</span>
+ 279             <span class="n">ProbeMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">ProbeMol</span><span class="p">,</span> <span class="n">ProbeMolCount</span><span class="p">)</span>
+ 280             
+ 281             <span class="n">RMSD</span> <span class="o">=</span> <span class="n">CalculateRMSDValue</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">ProbeMol</span><span class="p">)</span>
+ 282 
+ 283             <span class="n">Line</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%s%s%s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RefMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">ProbeMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">RMSD</span><span class="p">)</span>
+ 284             <span class="n">OutFH</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Line</span><span class="p">)</span>
+ 285         
+ 286 <span class="k">def</span> <span class="nf">CalculateFirstToAllRMSDValues</span><span class="p">(</span><span class="n">ValidRefMols</span><span class="p">,</span> <span class="n">ValidProbeMols</span><span class="p">,</span> <span class="n">OutFH</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">):</span>
+ 287     <span class="sd">&quot;&quot;&quot;Calculate RMSD values between first reference molecues and all probe molecules. &quot;&quot;&quot;</span>
+ 288     
+ 289     <span class="c1"># Process molecules...</span>
+ 290     <span class="n">RefMol</span> <span class="o">=</span> <span class="n">ValidRefMols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+ 291     <span class="n">RefMolCount</span> <span class="o">=</span> <span class="mi">1</span>
+ 292     <span class="n">RefMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">RefMolCount</span><span class="p">)</span>
+ 293 
+ 294     <span class="n">ProbeMolCount</span> <span class="o">=</span> <span class="mi">0</span>
+ 295     <span class="k">for</span> <span class="n">ProbeMol</span> <span class="ow">in</span> <span class="n">ValidProbeMols</span><span class="p">:</span>
+ 296         <span class="n">ProbeMolCount</span> <span class="o">+=</span> <span class="mi">1</span>
+ 297         <span class="n">ProbeMolName</span> <span class="o">=</span> <span class="n">RDKitUtil</span><span class="o">.</span><span class="n">GetMolName</span><span class="p">(</span><span class="n">ProbeMol</span><span class="p">,</span> <span class="n">ProbeMolCount</span><span class="p">)</span>
+ 298             
+ 299         <span class="n">RMSD</span> <span class="o">=</span> <span class="n">CalculateRMSDValue</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">ProbeMol</span><span class="p">)</span>
+ 300 
+ 301         <span class="n">Line</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%s%s%s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">RefMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">ProbeMolName</span><span class="p">,</span> <span class="n">OutDelim</span><span class="p">,</span> <span class="n">RMSD</span><span class="p">)</span>
+ 302         <span class="n">OutFH</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Line</span><span class="p">)</span>
+ 303         
+ 304 <span class="k">def</span> <span class="nf">CalculateRMSDValue</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">ProbeMol</span><span class="p">):</span>
+ 305     <span class="sd">&quot;&quot;&quot;Calculate RMSD value for a pair of molecules and return it as a string&quot;&quot;&quot;</span>
+ 306 
+ 307     <span class="k">try</span><span class="p">:</span>
+ 308         <span class="k">if</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;UseBestRMSD&quot;</span><span class="p">]:</span>
+ 309             <span class="n">RMSD</span> <span class="o">=</span> <span class="n">AllChem</span><span class="o">.</span><span class="n">GetBestRMS</span><span class="p">(</span><span class="n">RefMol</span><span class="p">,</span> <span class="n">ProbeMol</span><span class="p">)</span>
+ 310         <span class="k">else</span><span class="p">:</span>
+ 311             <span class="n">RMSD</span> <span class="o">=</span> <span class="n">rdMolAlign</span><span class="o">.</span><span class="n">AlignMol</span><span class="p">(</span><span class="n">ProbeMol</span><span class="p">,</span> <span class="n">RefMol</span><span class="p">,</span> <span class="n">maxIters</span> <span class="o">=</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;MaxIters&quot;</span><span class="p">])</span>
+ 312         <span class="n">RMSD</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">RMSD</span>
+ 313     <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+ 314         <span class="n">RMSD</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+ 315         
+ 316     <span class="k">return</span> <span class="n">RMSD</span>
+ 317 
+ 318 <span class="k">def</span> <span class="nf">ProcessOptions</span><span class="p">():</span>
+ 319     <span class="sd">&quot;&quot;&quot;Process and validate command line arguments and options&quot;&quot;&quot;</span>
+ 320     
+ 321     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="s2">&quot;Processing options...&quot;</span><span class="p">)</span>
+ 322     
+ 323     <span class="c1"># Validate options...</span>
+ 324     <span class="n">ValidateOptions</span><span class="p">()</span>
+ 325     
+ 326     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;CalcRMSD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--calcRMSD&quot;</span><span class="p">]</span>
+ 327     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;UseBestRMSD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+ 328     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^BestRMSD$&quot;</span><span class="p">,</span> <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;CalcRMSD&quot;</span><span class="p">],</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">):</span>
+ 329         <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;UseBestRMSD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+ 330     
+ 331     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;MaxIters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--maxIters&quot;</span><span class="p">])</span>
+ 332     
+ 333     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--mode&quot;</span><span class="p">]</span>
+ 334     
+ 335     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;RefFile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--reffile&quot;</span><span class="p">]</span>
+ 336     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;ProbeFile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--probefile&quot;</span><span class="p">]</span>
+ 337 
+ 338     <span class="c1"># No need for any RDKit specific --outfileParams....</span>
+ 339     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;InfileParams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ProcessOptionInfileParameters</span><span class="p">(</span><span class="s2">&quot;--infileParams&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--infileParams&quot;</span><span class="p">])</span>
+ 340     
+ 341     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Outfile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--outfile&quot;</span><span class="p">]</span>
+ 342     
+ 343     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--overwrite&quot;</span><span class="p">]</span>
+ 344     
+ 345     <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;OutDelim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+ 346     <span class="k">if</span> <span class="n">MiscUtil</span><span class="o">.</span><span class="n">CheckFileExt</span><span class="p">(</span><span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Outfile&quot;</span><span class="p">],</span> <span class="s2">&quot;csv&quot;</span><span class="p">):</span>
+ 347         <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;OutDelim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span>
+ 348     <span class="k">elif</span> <span class="n">MiscUtil</span><span class="o">.</span><span class="n">CheckFileExt</span><span class="p">(</span><span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Outfile&quot;</span><span class="p">],</span> <span class="s2">&quot;tsv txt&quot;</span><span class="p">):</span>
+ 349         <span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;OutDelim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span>
+ 350     <span class="k">else</span><span class="p">:</span>
+ 351         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintError</span><span class="p">(</span><span class="s2">&quot;The file name specified , </span><span class="si">%s</span><span class="s2">, for option </span><span class="se">\&quot;</span><span class="s2">--outfile</span><span class="se">\&quot;</span><span class="s2"> is not valid. Supported file formats: csv tsv txt</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">OptionsInfo</span><span class="p">[</span><span class="s2">&quot;Outfile&quot;</span><span class="p">]))</span>
+ 352 
+ 353 <span class="k">def</span> <span class="nf">RetrieveOptions</span><span class="p">():</span>
+ 354     <span class="sd">&quot;&quot;&quot;Retrieve command line arguments and options&quot;&quot;&quot;</span>
+ 355     
+ 356     <span class="c1"># Get options...</span>
+ 357     <span class="k">global</span> <span class="n">Options</span>
+ 358     <span class="n">Options</span> <span class="o">=</span> <span class="n">docopt</span><span class="p">(</span><span class="vm">__doc__</span><span class="p">)</span>
+ 359     
+ 360     <span class="c1"># Set current working directory to the specified directory...</span>
+ 361     <span class="n">WorkingDir</span> <span class="o">=</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--workingdir&quot;</span><span class="p">]</span>
+ 362     <span class="k">if</span> <span class="n">WorkingDir</span><span class="p">:</span>
+ 363         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">WorkingDir</span><span class="p">)</span>
+ 364     
+ 365     <span class="c1"># Handle examples option...</span>
+ 366     <span class="k">if</span> <span class="s2">&quot;--examples&quot;</span> <span class="ow">in</span> <span class="n">Options</span> <span class="ow">and</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--examples&quot;</span><span class="p">]:</span>
+ 367         <span class="n">MiscUtil</span><span class="o">.</span><span class="n">PrintInfo</span><span class="p">(</span><span class="n">MiscUtil</span><span class="o">.</span><span class="n">GetExamplesTextFromDocOptText</span><span class="p">(</span><span class="vm">__doc__</span><span class="p">))</span>
+ 368         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+ 369 
+ 370 <span class="k">def</span> <span class="nf">ValidateOptions</span><span class="p">():</span>
+ 371     <span class="sd">&quot;&quot;&quot;Validate option values&quot;&quot;&quot;</span>
+ 372     
+ 373     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionTextValue</span><span class="p">(</span><span class="s2">&quot;--calcRMSD&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--calcRMSD&quot;</span><span class="p">],</span> <span class="s2">&quot;RMSD BestRMSD&quot;</span><span class="p">)</span>
+ 374     
+ 375     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionNumberValue</span><span class="p">(</span><span class="s2">&quot;--maxIters&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--maxIters&quot;</span><span class="p">]),</span> <span class="p">{</span><span class="s2">&quot;&gt;&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+ 376     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionTextValue</span><span class="p">(</span><span class="s2">&quot;--mode&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--mode&quot;</span><span class="p">],</span> <span class="s2">&quot;OneToOne  AllToAll FirstToAll&quot;</span><span class="p">)</span>
+ 377     
+ 378     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionFilePath</span><span class="p">(</span><span class="s2">&quot;-r, --reffile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--reffile&quot;</span><span class="p">])</span>
+ 379     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionFileExt</span><span class="p">(</span><span class="s2">&quot;-r, --reffile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--reffile&quot;</span><span class="p">],</span> <span class="s2">&quot;sdf sd mol&quot;</span><span class="p">)</span>
+ 380     
+ 381     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionFilePath</span><span class="p">(</span><span class="s2">&quot;-p, --probefile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--probefile&quot;</span><span class="p">])</span>
+ 382     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionFileExt</span><span class="p">(</span><span class="s2">&quot;-p, --probefile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--probefile&quot;</span><span class="p">],</span> <span class="s2">&quot;sdf sd mol&quot;</span><span class="p">)</span>
+ 383         
+ 384     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionFileExt</span><span class="p">(</span><span class="s2">&quot;-o, --outfile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--outfile&quot;</span><span class="p">],</span> <span class="s2">&quot;csv tsv txt&quot;</span><span class="p">)</span>
+ 385     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionsOutputFileOverwrite</span><span class="p">(</span><span class="s2">&quot;-o, --outfile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--outfile&quot;</span><span class="p">],</span> <span class="s2">&quot;--overwrite&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--overwrite&quot;</span><span class="p">])</span>
+ 386     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionsDistinctFileNames</span><span class="p">(</span><span class="s2">&quot;-r, --reffile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--reffile&quot;</span><span class="p">],</span> <span class="s2">&quot;-o, --outfile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--outfile&quot;</span><span class="p">])</span>
+ 387     <span class="n">MiscUtil</span><span class="o">.</span><span class="n">ValidateOptionsDistinctFileNames</span><span class="p">(</span><span class="s2">&quot;-p, --probefile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--probefile&quot;</span><span class="p">],</span> <span class="s2">&quot;-o, --outfile&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="p">[</span><span class="s2">&quot;--outfile&quot;</span><span class="p">])</span>
+ 388     
+ 389 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+ 390     <span class="n">main</span><span class="p">()</span>
+</pre>
+<br />
+<center>
+<img src="../../../images/h2o2.png">
+</center>
+</body>
+</html>
